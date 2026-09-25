@@ -22,7 +22,7 @@
 @val @scope("document")
 external createElement: string => Dom.element = "createElement"
 
-@val @scope(("document", "body"))
+@val @scope("document")
 external body: Dom.element = "body"
 
 @send

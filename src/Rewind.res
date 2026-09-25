@@ -58,7 +58,23 @@ let use = (
     if enabled {
       let session = RewindStore.makeSession(~name, ~store, ~codec?, ())
       RewindRegistry.add(session)
-      RewindPanel.ensureMounted()
+      // A failed panel mount must never take the host app down with it --
+      // recording (session/history/dispatch) has already succeeded above,
+      // so it keeps working even if the panel itself can't.
+      try {
+        RewindPanel.ensureMounted()
+      } catch {
+      | exn =>
+        let msg = switch JsExn.fromException(exn) {
+        | Some(e) =>
+          switch JsExn.message(e) {
+          | Some(m) => m
+          | None => "unknown error"
+          }
+        | None => "unknown error"
+        }
+        Console.error(`rewind: panel failed to mount, continuing without it: ${msg}`)
+      }
       Some(() => RewindRegistry.remove(session))
     } else {
       None
