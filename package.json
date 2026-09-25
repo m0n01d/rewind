@@ -22,6 +22,7 @@
     "build": "rescript build",
     "dev": "rescript build -w",
     "clean": "rescript clean",
-    "test": "rescript build && for f in tests/*Test.res.mjs; do node \"$f\" || exit 1; done"
+    "test": "rescript build && for f in tests/*Test.res.mjs; do node \"$f\" || exit 1; done",
+    "demo": "vite demo --port 5199 --strictPort"
   }
 }

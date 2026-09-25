@@ -1,6 +1,6 @@
 {
   "name": "rescript-rewind",
-  "sources": [{ "dir": "src" }, { "dir": "tests", "type": "dev" }],
+  "sources": [{ "dir": "src" }, { "dir": "tests", "type": "dev" }, { "dir": "demo", "type": "dev" }],
   "package-specs": [{ "module": "esmodule", "in-source": true }],
   "suffix": ".res.mjs",
   "jsx": { "version": 4, "mode": "automatic" },
