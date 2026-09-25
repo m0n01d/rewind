@@ -121,3 +121,8 @@ type fileList
 external item: (fileList, int) => option<file> = "item"
 
 @send external text: file => promise<string> = "text"
+
+// `Element.prototype.remove()`, no arguments -- spec-total. Used to clean
+// up the throwaway `<a>` that export downloads create in `document.body`.
+@send
+external remove: Dom.element => unit = "remove"
