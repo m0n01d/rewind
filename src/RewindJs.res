@@ -3,7 +3,7 @@
 // as safe to call only after a shape/tag check has already confirmed it
 // applies -- RewindValue does that check first every time. Together with
 // the stdlib Type.Classify.classify, these let RewindValue inspect an
-// arbitrary 'a without Obj.magic, %raw, %%raw or %identity.
+// arbitrary 'a with no unsafe cast and no raw-JS escape hatch of any kind.
 
 // An opaque handle to a JS value of unknown shape: a field read out of an
 // object, or a Map/Set/array element. It is never inspected directly --
@@ -33,9 +33,9 @@ external isArray: Type.Classify.object => bool = "Array.isArray"
 
 // Object.prototype.toString.call(x) is defined for every value and returns
 // a "[object Tag]" string -- it's how a Map, a Set, a Date, a Blob, a File
-// and a plain object are told apart without a type test that would need
-// %raw. It can only throw if a value defines a Symbol.toStringTag getter
-// that itself throws, which RewindValue wraps.
+// and a plain object are told apart without an unsafe type test. It can
+// only throw if a value defines a Symbol.toStringTag getter that itself
+// throws, which RewindValue wraps.
 @val
 external toStringTag: Type.Classify.object => string = "Object.prototype.toString.call"
 
