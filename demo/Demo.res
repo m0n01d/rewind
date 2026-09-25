@@ -15,12 +15,20 @@ type todo = {
   done_: bool,
 }
 
-type model = {
+type rec model = {
   count: int,
   todos: array<todo>,
   draft: string,
-  saving: bool,
+  status: status,
 }
+and status =
+  // Idle: never saved this session. Saving: a Save is in flight. Saved:
+  // the last Save completed. A named variant, not `saving: bool`, so a
+  // paused past entry shows its OWN true status instead of always
+  // reading "Saved" for every entry before the first save ever happened.
+  | Idle
+  | Saving
+  | Saved
 
 type msg =
   | Increment
@@ -31,7 +39,7 @@ type msg =
   | Save
   | Saved
 
-let init: model = {count: 0, todos: [], draft: "", saving: false}
+let init: model = {count: 0, todos: [], draft: "", status: Idle}
 
 let reduce = (model: model, msg: msg): model =>
   switch msg {
@@ -54,8 +62,8 @@ let reduce = (model: model, msg: msg): model =>
         i == index ? {...todo, done_: !todo.done_} : todo
       ),
     }
-  | Save => {...model, saving: true}
-  | Saved => {...model, saving: false}
+  | Save => {...model, status: Saving}
+  | Saved => {...model, status: Saved}
   }
 
 // --- codec: one msg <-> JSON.t, decode errors name the bad field ----------
@@ -120,13 +128,13 @@ let make = () => {
   // module comment and DESIGN.md §3. A paused, stale view must not be
   // able to (re)trigger this timer.
   React.useEffect1(() => {
-    if rewind.live.saving {
+    if rewind.live.status == Saving {
       let id = setTimeout(() => rewind.dispatch(Saved), 800)
       Some(() => clearTimeout(id))
     } else {
       None
     }
-  }, [rewind.live.saving])
+  }, [rewind.live.status])
 
   // View: renders only `rewind.model` -- the paused entry when paused,
   // the live model otherwise.
@@ -164,7 +172,11 @@ let make = () => {
     </ul>
     <section>
       <button onClick={_ => rewind.dispatch(Save)}> {React.string("Save")} </button>
-      <span> {React.string(model.saving ? "Saving…" : "Saved")} </span>
+      {switch model.status {
+      | Idle => React.null
+      | Saving => <span> {React.string("Saving…")} </span>
+      | Saved => <span> {React.string("Saved")} </span>
+      }}
     </section>
   </div>
 }
