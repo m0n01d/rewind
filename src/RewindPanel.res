@@ -395,10 +395,18 @@ module App = {
     | Some(s) => Some(s.id)
     | None => None
     }
-    let badgeCount = switch selected {
+    // `selected` alone does not keep the badge live: App only re-renders
+    // on a registry add/remove or on anyPaused changing, and neither fires
+    // on a plain dispatch while the panel is closed and nothing is paused.
+    // Subscribe to every session's own store instead (same over-subscription
+    // trade-off as anyPaused above) so a plain dispatch repaints the badge.
+    let badgeCount = useSyncExternalStore(onChange => {
+      let unsubs = sessions->Array.map(s => s.subscribe(onChange))
+      () => unsubs->Array.forEach(u => u())
+    }, () => switch selected {
     | Some(s) => s.getSnapshot().count
     | None => 0
-    }
+    })
 
     <div className="rewind-root" ref={ReactDOM.Ref.domRef(rootRef)}>
       <button
