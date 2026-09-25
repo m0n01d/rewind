@@ -30,3 +30,9 @@ let toArray: t<'a> => array<'a>
 /** How many entries `push` has dropped since `make`, because the history
     was at its cap. */
 let dropped: t<'a> => int
+
+/** The cap this history was made with (as given to `make`, clamped to at
+    least 1). Constant for the life of a `t` — `push` never changes it.
+    RewindCore's `Replace` needs this to rebuild a fresh history at the same
+    cap. */
+let cap: t<'a> => int

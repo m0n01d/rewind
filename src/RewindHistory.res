@@ -44,3 +44,5 @@ let last = (t: t<'a>): 'a =>
 let toArray = (t: t<'a>): array<'a> => Array.copy(t.items)
 
 let dropped = (t: t<'a>): int => t.dropped
+
+let cap = (t: t<'a>): int => t.cap

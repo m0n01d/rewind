@@ -6,6 +6,7 @@ TestKit.check(kit, "make: length is 1", RewindHistory.length(h) == 1)
 TestKit.check(kit, "make: last is the initial value", RewindHistory.last(h) == "a")
 TestKit.check(kit, "make: get(0) is the initial value", RewindHistory.get(h, 0) == Some("a"))
 TestKit.check(kit, "make: dropped is 0", RewindHistory.dropped(h) == 0)
+TestKit.check(kit, "make: cap is what was passed in", RewindHistory.cap(h) == 3)
 TestKit.check(kit, "make: toArray is [a]", RewindHistory.toArray(h) == ["a"])
 
 // push below cap grows the history and keeps order oldest-first.
@@ -28,6 +29,7 @@ TestKit.check(kit, "push over cap: last is the newest", RewindHistory.last(h) ==
 let h = RewindHistory.push(h, "e")
 TestKit.check(kit, "second push over cap: dropped is 2", RewindHistory.dropped(h) == 2)
 TestKit.check(kit, "second push over cap: toArray is oldest-first", RewindHistory.toArray(h) == ["c", "d", "e"])
+TestKit.check(kit, "cap stays constant across pushes", RewindHistory.cap(h) == 3)
 
 // get is out of range below 0 and at/above length.
 TestKit.check(kit, "get: negative index is None", RewindHistory.get(h, -1) == None)
