@@ -27,6 +27,32 @@ let rowLabel = (entry: RewindStore.entrySnapshot): string =>
   | None => "Init"
   }
 
+// One row per history entry, oldest first (`i = 0` is Init through
+// `snapshot.count`, the newest). Built with Array.fromInitializer, not
+// recursion: a non-tail `Array.concat([row], rows(i + 1))` call per entry
+// cost one JS stack frame per row, and a large capped history (the
+// default cap is 10000) blew the stack well below that default -- see
+// RewindPanelRowsTest.res. fromInitializer is iterative under the hood,
+// so depth no longer depends on history size.
+let messageRows = (
+  ~snapshot: RewindStore.snapshot,
+  ~selected: int,
+  ~onRowClick: int => unit,
+): array<React.element> =>
+  Array.fromInitializer(~length=snapshot.count + 1, i =>
+    switch snapshot.entry(i) {
+    | None => React.null
+    | Some(entry) =>
+      <div
+        className={selected == i ? "rewind-row rewind-row-selected" : "rewind-row"}
+        key={Int.toString(i)}
+        onClick={_ => onRowClick(i)}>
+        <span className="rewind-row-index"> {React.string(`#${Int.toString(i)}`)} </span>
+        <span className="rewind-row-label"> {React.string(rowLabel(entry))} </span>
+      </div>
+    }
+  )
+
 // The index whose Model/Message/Diff tab should show: the paused cursor,
 // or the latest entry (`count`) when live. `count` is 0 (Init) when no
 // messages have been recorded yet -- see HANDOFF.md's index-space note.
@@ -201,26 +227,10 @@ module SessionDetail = {
       | _ => ()
       }
 
-    let rec rows = (i: int): array<React.element> =>
-      if i > snapshot.count {
-        []
-      } else {
-        let row = switch snapshot.entry(i) {
-        | None => React.null
-        | Some(entry) =>
-          <div
-            className={selected == i ? "rewind-row rewind-row-selected" : "rewind-row"}
-            key={Int.toString(i)}
-            onClick={_ => session.jump(i)}>
-            <span className="rewind-row-index"> {React.string(`#${Int.toString(i)}`)} </span>
-            <span className="rewind-row-label"> {React.string(rowLabel(entry))} </span>
-          </div>
-        }
-        Array.concat([row], rows(i + 1))
-      }
-
     <div className="rewind-session-detail">
-      <div className="rewind-message-list" onKeyDown tabIndex={0}> {rows(0)->React.array} </div>
+      <div className="rewind-message-list" onKeyDown tabIndex={0}>
+        {messageRows(~snapshot, ~selected, ~onRowClick=i => session.jump(i))->React.array}
+      </div>
       <div className="rewind-tabs">
         <button
           className={panelState.tab == RewindPanelState.Model
