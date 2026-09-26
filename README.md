@@ -12,7 +12,20 @@ app and step through its history. rewind copies these parts of the
 - a badge that shows the current message count
 - a list of past messages, one row for each step
 - three views for the selected entry: Model, Message, and Diff
-- a full-screen blocker while paused, that blocks input the way Elm's `BlockAll` does
+- a full-screen blocker while paused, that blocks these events:
+  - click
+  - mousedown
+  - mouseup
+  - keydown
+  - keyup
+  - keypress
+  - pointerdown
+  - pointerup
+  - touchstart
+  - touchend
+  - wheel
+  - submit
+  - input
 - a click on the blocker, that resumes the live view
 - Import and Export controls, shown only when the app supplies a codec
 
@@ -94,7 +107,11 @@ A React hook built on rewind returns two models: `model` and `live`. Render
 one. Read `live` in an effect, not `model`, so a paused view cannot fire
 that effect again.
 
-## Dev Only
+`Rewind.use` also takes `~name` and `~cap`. `~name` defaults to `"app"`. It
+labels this session in the panel. `~cap` defaults to `10000`. It sets the
+most entries the history keeps. See Limits below for more about `~cap`.
+
+## The `~enabled` flag
 
 Pass `~enabled` from your bundler's dev flag, so rewind only records in
 development. With Vite, bind the flag like this:
@@ -109,6 +126,14 @@ Then pass it to `Rewind.use`:
 let rewind = Rewind.use(~enabled=viteDev, reduce, {count: 0, saving: false})
 ```
 
+`~enabled` is a runtime flag, not a build switch. The rewind code ships in
+your production bundle even when the app sets `~enabled=false`. We measured
+this in reflip on 2026-09-25. rewind adds 25.6 kB raw and 7.4 kB gzip to the
+bundle. The bundle grows from 291.3 kB to 316.9 kB. When `~enabled` is
+`false`, the panel does not mount. The extra code then has no visible
+effect. A compile-time switch that removes rewind from a production build
+entirely is possible future work.
+
 ## Export and Import
 
 Pass `~codec` to `Rewind.use`, so the panel can export and import this
@@ -119,6 +144,10 @@ A codec is a pair of pure functions. `encode` turns one message into JSON.
 `decode` turns JSON back into a message, or into an error. A message that
 holds a `Blob` or a function cannot have a codec, because neither converts
 to JSON.
+
+Once the cap has dropped an entry, export fails. A partial log does not
+match what your app actually did. Export returns an error instead of a
+JSON string.
 
 ## Limits
 
@@ -141,6 +170,16 @@ ReScript compiles them to the same runtime shape:
 
 This is a limit of runtime reflection, not a bug rewind can fix. A codec
 that the app writes does not have this problem.
+
+`~cap` counts entries, not bytes. A message that carries a large value,
+such as a `Blob`, stays alive in memory until its entry falls off the cap.
+When your messages carry large values, pass a lower `~cap`.
+
+Time travel replays only the model. It does not restore resources outside
+the model, such as a revoked object URL. For example, your app can revoke
+the object URL of an old photo. A paused entry that used that URL then
+shows a broken image. This is a limit of the design, not a bug rewind can
+fix.
 
 ## Develop
 

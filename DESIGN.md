@@ -17,7 +17,7 @@ The first user of this library is reflip. See `~/code/reflip`.
 
 `RewindCore.update` follows six rules. We checked each one against `elm/browser`, version 1.0.2, file `src/Debugger/Main.elm`, on 2026-09-25.
 
-1. **App.** The live model always advances. While recording, rewind also pushes a new entry to the history. When the cap drops old entries, a paused cursor still stays on the same entry.
+1. **App.** The live model always advances. While recording, rewind also pushes a new entry to the history. When the cap drops old entries, a paused cursor still stays on the same entry. If the cap drops the paused entry itself, the cursor clamps to index 0. After that, each push still drops the oldest entry. The cursor then shows this new oldest entry each time.
 2. **Jump.** rewind clamps the index to the valid range. The newest index gives the live view. Any other index pauses on that entry.
 3. **Resume.** This action sets the cursor to live.
 4. **Replace.** This action replays a list of messages from the start model. It builds a fresh, capped history. When the replay ends, the cursor is live.
@@ -34,6 +34,13 @@ This split matches Elm. Elm computes subscriptions from the newest model, not th
 
 An effect that reads a paused model can run its work again. reflip's upload effect is one example. A stale, paused model can fire a second upload of the same file.
 
+Import writes to `live`, not only to the history. The panel's Import
+control sends a `Replace` action. `Replace` rebuilds the history from the
+imported messages, and it also rewrites `live` to the last one. A
+live-reading effect runs again against this rebuilt state, the same as it
+runs for any other message. We checked this in `RewindCore.res`, the
+`Replace` branch of `update`, on 2026-09-25.
+
 ## 4. The reflection rule
 
 rewind reads the shape of a value with the stdlib function `Type.Classify.classify`. We checked this against the installed `rescript` package on 2026-09-25.
@@ -47,13 +54,26 @@ A later commit adds a React panel. It copies six parts of Elm's debugger UI:
 - a small badge in the corner, which shows the current message count
 - a list of past messages, one row per recorded step
 - three views for the selected entry: Model, Message, and Diff
-- a full-screen blocker while paused, which blocks input events the way Elm's `BlockAll` does
+- a full-screen blocker while paused, which blocks these events:
+  - click
+  - mousedown
+  - mouseup
+  - keydown
+  - keyup
+  - keypress
+  - pointerdown
+  - pointerup
+  - touchstart
+  - touchend
+  - wheel
+  - submit
+  - input
 - a click anywhere on the blocker, which resumes the live view
 - Import and Export controls
 
 When the app supplies a codec, rewind shows the Import and Export controls. Otherwise, it hides them.
 
-We checked `BlockAll` against `elm/browser`, version 1.0.2, file `src/Debugger/Overlay.elm`, on 2026-09-25.
+We checked this list against `src/RewindPanel.res`, the `eventTypes` array in the blocker effect, on 2026-09-25.
 
 ## 6. Non-goals for v0
 
