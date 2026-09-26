@@ -426,6 +426,21 @@ module App = {
       </button>
       {panelState.open_
         ? <div className="rewind-panel">
+            <div className="rewind-panel-header">
+              <span className="rewind-panel-title"> {React.string("rewind")} </span>
+              {anyPaused
+                ? <button
+                    className="rewind-btn rewind-panel-resume"
+                    onClick={_ => sessions->Array.forEach(s => s.resume())}>
+                    {React.string("Resume")}
+                  </button>
+                : React.null}
+              <button
+                className="rewind-btn rewind-panel-close"
+                onClick={_ => panelDispatch(RewindPanelState.Close)}>
+                {React.string("Close")}
+              </button>
+            </div>
             {Array.length(sessions) > 1
               ? <SessionPicker panelDispatch selectedId sessions />
               : React.null}
@@ -494,6 +509,15 @@ let panelCss = `
     border-radius: 10px 10px 0 0;
   }
 }
+.rewind-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid #333;
+  flex: none;
+}
+.rewind-panel-title { flex: 1; color: #ccc; font-weight: 600; }
 .rewind-session-picker {
   display: flex;
   flex-wrap: wrap;
@@ -591,8 +615,9 @@ let panelCss = `
   z-index: 2147482900;
   background: rgba(0, 0, 0, 0.35);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 16px;
   cursor: pointer;
 }
 .rewind-blocker-label {
